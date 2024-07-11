@@ -1,0 +1,95 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3b4226e..d73cb14 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -4,13 +4,6 @@ project(lsp)
+ 
+ set(CMAKE_CXX_STANDARD 20)
+ 
+-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /bigobj")
+-else()
+-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined")
+-endif()
+-
+ add_executable(lspgen lspgen/lspgen.cpp lsp/json/json.cpp lsp/str.cpp)
+ target_include_directories(lspgen PRIVATE .)
+ 
+diff --git a/lsp/json/json.h b/lsp/json/json.h
+index ab5a3f3..7b7428c 100644
+--- a/lsp/json/json.h
++++ b/lsp/json/json.h
+@@ -67,31 +67,27 @@ public:
+ 	template<typename T>
+ 	T& get()
+ 	{
+-		if(std::holds_alternative<T>(*this))
+-			return std::get<T>(*this);
+-
+-		throw TypeError{};
+-	}
+-
+-	template<>
+-	Any& get()
+-	{
+-		return *this;
++        if constexpr (std::is_same_v<T, Any>) {
++            return *this;
++        } else {
++            if (std::holds_alternative<T>(*this))
++                return std::get<T>(*this);
++
++            throw TypeError{};
++        }
+ 	}
+ 
+ 	template<typename T>
+ 	const T& get() const
+ 	{
+-		if(std::holds_alternative<T>(*this))
+-			return std::get<T>(*this);
+-
+-		throw TypeError{};
+-	}
+-
+-	template<>
+-	const Any& get() const
+-	{
+-		return *this;
++        if constexpr (std::is_same_v<T, Any>) {
++            return *this;
++        } else {
++            if (std::holds_alternative<T>(*this))
++                return std::get<T>(*this);
++
++            throw TypeError{};
++        }
+ 	}
+ 
+ 	Decimal numberValue() const
+diff --git a/lsp/messagedispatcher.h b/lsp/messagedispatcher.h
+index 57d9e26..21237e6 100644
+--- a/lsp/messagedispatcher.h
++++ b/lsp/messagedispatcher.h
+@@ -3,6 +3,7 @@
+ #include <mutex>
+ #include <lsp/connection.h>
+ #include <lsp/messagebase.h>
++#include <lsp/serialization.h>
+ 
+ namespace lsp{
+ 
+diff --git a/lsp/str.h b/lsp/str.h
+index 818dc9a..d2a2de6 100644
+--- a/lsp/str.h
++++ b/lsp/str.h
+@@ -1,5 +1,8 @@
+ #pragma once
+ 
++#ifndef _MSC_VER
++#include <strings.h>
++#endif
+ #include <string>
+ #include <vector>
+ #include <iterator>

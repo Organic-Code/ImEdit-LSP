@@ -20,6 +20,8 @@ project(
 )
 include(FetchContent)
 
+add_definitions(-DIMEDIT_CUSTOM_TOKEN_TYPES=preprocessor,constant,operators,)
+
 # Set CMake modules path
 list(APPEND
   CMAKE_MODULE_PATH
